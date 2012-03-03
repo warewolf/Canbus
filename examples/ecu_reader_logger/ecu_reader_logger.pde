@@ -122,8 +122,8 @@ void setup() {
   clear_lcd();
  
   sLCD.print("D:CAN  U:GPS");
-  sLCD.print(byte(COMMAND));
-  sLCD.print(byte(LINE1));
+  sLCD.write(byte(COMMAND));
+  sLCD.write(byte(LINE1));
   sLCD.print("L:SD   R:LOG");
   
   while(1)
@@ -174,8 +174,8 @@ void loop() {
  
   if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1)          /* Request for engine RPM */
   {
-    sLCD.print(byte(COMMAND));                   /* Move LCD cursor to line 0 */
-    sLCD.print(byte(LINE0));
+    sLCD.write(byte(COMMAND));                   /* Move LCD cursor to line 0 */
+    sLCD.write(byte(LINE0));
     sLCD.print(buffer);                         /* Display data on LCD */
    
     
@@ -184,25 +184,25 @@ void loop() {
    
   if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1)
   {
-    sLCD.print(byte(COMMAND));
-    sLCD.print(byte(LINE0 + 9));
+    sLCD.write(byte(COMMAND));
+    sLCD.write(byte(LINE0 + 9));
     sLCD.print(buffer);
    
   }
   
   if(Canbus.ecu_req(ENGINE_COOLANT_TEMP,buffer) == 1)
   {
-    sLCD.print(byte(COMMAND));
-    sLCD.print(byte(LINE1));                     /* Move LCD cursor to line 1 */
-    sLCD.print(buffer);
+    sLCD.write(byte(COMMAND));
+    sLCD.write(byte(LINE1));                     /* Move LCD cursor to line 1 */
+    sLCD.write(buffer);
    
    
   }
   
   if(Canbus.ecu_req(THROTTLE,buffer) == 1)
   {
-    sLCD.print(byte(COMMAND));
-    sLCD.print(byte(LINE1 + 9));
+    sLCD.write(byte(COMMAND));
+    sLCD.write(byte(LINE1 + 9));
     sLCD.print(buffer);
      file.print(buffer);
   }  
@@ -235,8 +235,8 @@ void logging(void)
   delay(500);
   clear_lcd(); 
   sLCD.print("Press J/S click");  
-  sLCD.print(byte(COMMAND));
-  sLCD.print(byte(LINE1));                     /* Move LCD cursor to line 1 */
+  sLCD.write(byte(COMMAND));
+  sLCD.write(byte(LINE1));                     /* Move LCD cursor to line 1 */
    sLCD.print("to Stop"); 
   
   // initialize the SD card at SPI_HALF_SPEED to avoid bus errors with
@@ -278,8 +278,8 @@ void logging(void)
       
     if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1)          /* Request for engine RPM */
       {
-        sLCD.print(byte(COMMAND));                   /* Move LCD cursor to line 0 */
-        sLCD.print(byte(LINE0));
+        sLCD.write(byte(COMMAND));                   /* Move LCD cursor to line 0 */
+        sLCD.write(byte(LINE0));
         sLCD.print(buffer);                         /* Display data on LCD */
         file.print(buffer);
          file.print(',');
@@ -289,8 +289,8 @@ void logging(void)
    
       if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1)
       {
-        sLCD.print(byte(COMMAND));
-        sLCD.print(byte(LINE0 + 9));
+        sLCD.write(byte(COMMAND));
+        sLCD.write(byte(LINE0 + 9));
         sLCD.print(buffer);
         file.print(buffer);
         file.print(','); 
@@ -298,8 +298,8 @@ void logging(void)
       
       if(Canbus.ecu_req(ENGINE_COOLANT_TEMP,buffer) == 1)
       {
-        sLCD.print(byte(COMMAND));
-        sLCD.print(byte(LINE1));                     /* Move LCD cursor to line 1 */
+        sLCD.write(byte(COMMAND));
+        sLCD.write(byte(LINE1));                     /* Move LCD cursor to line 1 */
         sLCD.print(buffer);
          file.print(buffer);
        
@@ -307,8 +307,8 @@ void logging(void)
       
       if(Canbus.ecu_req(THROTTLE,buffer) == 1)
       {
-        sLCD.print(byte(COMMAND));
-        sLCD.print(byte(LINE1 + 9));
+        sLCD.write(byte(COMMAND));
+        sLCD.write(byte(LINE1 + 9));
         sLCD.print(buffer);
          file.print(buffer);
       }  
@@ -320,8 +320,8 @@ void logging(void)
        if (digitalRead(CLICK) == 0){  /* Check for Click button */
            file.close();
            Serial.println("Done");
-           sLCD.print(byte(COMMAND));
-           sLCD.print(byte(CLEAR));
+           sLCD.write(byte(COMMAND));
+           sLCD.write(byte(CLEAR));
      
            sLCD.print("DONE");
           while(1);
@@ -578,8 +578,8 @@ void gps_test(void){
     Serial.print(date, DEC); Serial.print('/');
     Serial.println(year, DEC);
     
-    sLCD.print(byte(COMMAND));
-    sLCD.print(byte(0x80));
+    sLCD.write(byte(COMMAND));
+    sLCD.write(byte(0x80));
     sLCD.print("La");
    
     Serial.print("Lat"); 
@@ -601,13 +601,13 @@ void gps_test(void){
     
     
     
-    sLCD.print(latitude/1000000, DEC); sLCD.print(byte(0xDF)); sLCD.print(' ');
+    sLCD.print(latitude/1000000, DEC); sLCD.write(byte(0xDF)); sLCD.print(' ');
     sLCD.print((latitude/10000)%100, DEC); sLCD.print('\''); //sLCD.print(' ');
     sLCD.print((latitude%10000)*6/1000, DEC); sLCD.print('.');
     sLCD.print(((latitude%10000)*6/10)%100, DEC); sLCD.print('"');
     
-    sLCD.print(byte(COMMAND));
-    sLCD.print(byte(0xC0));
+    sLCD.write(byte(COMMAND));
+    sLCD.write(byte(0xC0));
     sLCD.print("Ln");
    
       
@@ -678,6 +678,6 @@ uint32_t parsedecimal(char *str) {
 
 void clear_lcd(void)
 {
-  sLCD.print(byte(COMMAND));
-  sLCD.print(byte(CLEAR));
+  sLCD.write(byte(COMMAND));
+  sLCD.write(byte(CLEAR));
 }  
