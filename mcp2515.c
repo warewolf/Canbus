@@ -28,7 +28,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include "WConstants.h"
+#include "Arduino.h"
 #include "global.h"
 #include "mcp2515.h"
 #include "mcp2515_defs.h"
