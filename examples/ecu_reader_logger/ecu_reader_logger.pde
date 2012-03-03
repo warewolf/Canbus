@@ -14,7 +14,7 @@ v3.0 21-02-11  Use library from Adafruit for sd card instead.
 
 #include <SdFat.h>        /* Library from Adafruit.com */
 #include <SdFatUtil.h>
-#include <NewSoftSerial.h>
+#include <SoftwareSerial.h>
 #include <Canbus.h>
 
 
@@ -23,7 +23,7 @@ SdVolume volume;
 SdFile root;
 SdFile file;
 
-NewSoftSerial sLCD =  NewSoftSerial(3, 6); /* Serial LCD is connected on pin 14 (Analog input 0) */
+SoftwareSerial sLCD =  SoftwareSerial(3, 6); /* Serial LCD is connected on pin 14 (Analog input 0) */
 #define COMMAND 0xFE
 #define CLEAR   0x01
 #define LINE0   0x80
@@ -72,7 +72,7 @@ void error_P(const char* str) {
   while(1);
 }
 
-NewSoftSerial mySerial =  NewSoftSerial(4, 5);
+SoftwareSerial mySerial =  SoftwareSerial(4, 5);
 
 #define COMMAND 0xFE
 //#define powerpin 4
