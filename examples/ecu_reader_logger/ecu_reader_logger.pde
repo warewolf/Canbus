@@ -25,6 +25,7 @@ SdVolume volume;
 SdFile root;
 SdFile file;
 
+/* Serial LCD */
 SoftwareSerial sLCD =  SoftwareSerial(3, 6); /* Serial LCD is connected on pin 14 (Analog input 0) */
 #define COMMAND 0xFE
 #define CLEAR   0x01
@@ -39,7 +40,7 @@ SoftwareSerial sLCD =  SoftwareSerial(3, 6); /* Serial LCD is connected on pin 1
 #define CLICK  A4
 #define LEFT   A5
 
-  
+// CAN buffer
 char buffer[512];  //Data will be temporarily stored to this buffer before being written to the file
 char tempbuf[15];
 char lat_str[14];
@@ -74,41 +75,23 @@ void error_P(const char* str) {
   while(1);
 }
 
-SoftwareSerial mySerial =  SoftwareSerial(4, 5);
-
-#define COMMAND 0xFE
-//#define powerpin 4
-
-#define GPSRATE 4800
-//#define GPSRATE 38400
-
-
-// GPS parser for 406a
-#define BUFFSIZ 90 // plenty big
-//char buffer[BUFFSIZ];
-char *parseptr;
-char buffidx;
-uint8_t hour, minute, second, year, month, date;
-uint32_t latitude, longitude;
-uint8_t groundspeed, trackangle;
-char latdir, longdir;
-char status;
-uint32_t waypoint = 0;
- 
 void setup() {
-  Serial.begin(GPSRATE);
-  mySerial.begin(GPSRATE);
+
+  /* Set LED pin state */
   pinMode(LED2, OUTPUT); 
   pinMode(LED3, OUTPUT); 
  
   digitalWrite(LED2, LOW);
+
+  /* Set joystick PIN modes */
   pinMode(UP,INPUT);
   pinMode(DOWN,INPUT);
   pinMode(LEFT,INPUT);
   pinMode(RIGHT,INPUT);
   pinMode(CLICK,INPUT);
 
-  digitalWrite(UP, HIGH);       /* Enable internal pull-ups */
+  /* Set joystick PIN states */
+  digitalWrite(UP, HIGH);
   digitalWrite(DOWN, HIGH);
   digitalWrite(LEFT, HIGH);
   digitalWrite(RIGHT, HIGH);
@@ -121,19 +104,13 @@ void setup() {
   sLCD.begin(9600);              /* Setup serial LCD and clear the screen */
   clear_lcd();
  
-  sLCD.print("D:CAN  U:GPS");
+  sLCD.print("D:CAN");
   sLCD.write(byte(COMMAND));
   sLCD.write(byte(LINE1));
   sLCD.print("L:SD   R:LOG");
   
   while(1)
   {
-    
-    if (digitalRead(UP) == 0){
-      Serial.println("gps");
-      sLCD.print("GPS");
-      gps_test();
-    }
     
     if (digitalRead(DOWN) == 0) {
       sLCD.print("CAN");
@@ -180,6 +157,7 @@ void loop() {
    
     
   } 
+
   digitalWrite(LED3, HIGH);
    
   if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1)
@@ -206,8 +184,6 @@ void loop() {
     sLCD.print(buffer);
      file.print(buffer);
   }  
-//  Canbus.ecu_req(O2_VOLTAGE,buffer);
-     
    
    digitalWrite(LED3, LOW); 
    delay(100); 
@@ -267,15 +243,7 @@ void logging(void)
 
   while(1)    /* Main logging loop */
   {
-     read_gps();
-     
-     file.print(waypoint++);
-     file.print(',');
-     file.print(lat_str);
-     file.print(',');
-     file.print(lon_str);
-     file.print(',');
-      
+
     if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1)          /* Request for engine RPM */
       {
         sLCD.write(byte(COMMAND));                   /* Move LCD cursor to line 0 */
@@ -377,303 +345,6 @@ void sd_test(void)
  while(1);  /* Don't return */ 
     
 
-}
-void read_gps(void)
-{
- uint32_t tmp;
-
-  unsigned char i;
-  unsigned char exit = 0;
-  
-  
-  while( exit == 0)
-  { 
-    
-   readline();
- 
-  // check if $GPRMC (global positioning fixed data)
-   if (strncmp(buffer, "$GPRMC",6) == 0) {
-     
-        digitalWrite(LED2, HIGH);
-        
-        // hhmmss time data
-        parseptr = buffer+7;
-        tmp = parsedecimal(parseptr); 
-        hour = tmp / 10000;
-        minute = (tmp / 100) % 100;
-        second = tmp % 100;
-        
-        parseptr = strchr(parseptr, ',') + 1;
-        status = parseptr[0];
-        parseptr += 2;
-          
-        for(i=0;i<11;i++)
-        {
-          lat_str[i] = parseptr[i];
-        }
-        lat_str[12] = 0;
-      //  Serial.println(" ");
-      //  Serial.println(lat_str);
-       
-        // grab latitude & long data
-        latitude = parsedecimal(parseptr);
-        if (latitude != 0) {
-          latitude *= 10000;
-          parseptr = strchr(parseptr, '.')+1;
-          latitude += parsedecimal(parseptr);
-        }
-        parseptr = strchr(parseptr, ',') + 1;
-        // read latitude N/S data
-        if (parseptr[0] != ',') {
-          
-          latdir = parseptr[0];
-        }
-        
-        // longitude
-        parseptr = strchr(parseptr, ',')+1;
-      
-        for(i=0;i<12;i++)
-        {
-          lon_str[i] = parseptr[i];
-        }
-        lon_str[13] = 0;
-        
-        //Serial.println(lon_str);
-   
-        longitude = parsedecimal(parseptr);
-        if (longitude != 0) {
-          longitude *= 10000;
-          parseptr = strchr(parseptr, '.')+1;
-          longitude += parsedecimal(parseptr);
-        }
-        parseptr = strchr(parseptr, ',')+1;
-        // read longitude E/W data
-        if (parseptr[0] != ',') {
-          longdir = parseptr[0];
-        }
-        
-    
-        // groundspeed
-        parseptr = strchr(parseptr, ',')+1;
-        groundspeed = parsedecimal(parseptr);
-    
-        // track angle
-        parseptr = strchr(parseptr, ',')+1;
-        trackangle = parsedecimal(parseptr);
-    
-        // date
-        parseptr = strchr(parseptr, ',')+1;
-        tmp = parsedecimal(parseptr); 
-        date = tmp / 10000;
-        month = (tmp / 100) % 100;
-        year = tmp % 100;
-        
-       
-        digitalWrite(LED2, LOW);
-        exit = 1;
-       }
-       
-  }   
-
-}
-
-      
-      
-
-void gps_test(void){
-  uint32_t tmp;
-  uint32_t lat;
-  unsigned char i;
-  
-  while(1){
-  
-   readline();
-  
-  // check if $GPRMC (global positioning fixed data)
-  if (strncmp(buffer, "$GPRMC",6) == 0) {
-    
-    // hhmmss time data
-    parseptr = buffer+7;
-    tmp = parsedecimal(parseptr); 
-    hour = tmp / 10000;
-    minute = (tmp / 100) % 100;
-    second = tmp % 100;
-    
-    parseptr = strchr(parseptr, ',') + 1;
-    status = parseptr[0];
-    parseptr += 2;
-      
-    for(i=0;i<11;i++)
-    {
-      lat_str[i] = parseptr[i];
-    }
-    lat_str[12] = 0;
-     Serial.println("\nlat_str ");
-     Serial.println(lat_str);
-   
-  
-    // grab latitude & long data
-    // latitude
-    latitude = parsedecimal(parseptr);
-    if (latitude != 0) {
-      latitude *= 10000;
-      parseptr = strchr(parseptr, '.')+1;
-      latitude += parsedecimal(parseptr);
-    }
-    parseptr = strchr(parseptr, ',') + 1;
-    // read latitude N/S data
-    if (parseptr[0] != ',') {
-      
-      latdir = parseptr[0];
-    }
-    
-    //Serial.println(latdir);
-    
-    // longitude
-    parseptr = strchr(parseptr, ',')+1;
-  
-    for(i=0;i<12;i++)
-    {
-      lon_str[i] = parseptr[i];
-    }
-    lon_str[13] = 0;
-    
-    Serial.println(lon_str);
-   
-  
-    longitude = parsedecimal(parseptr);
-    if (longitude != 0) {
-      longitude *= 10000;
-      parseptr = strchr(parseptr, '.')+1;
-      longitude += parsedecimal(parseptr);
-    }
-    parseptr = strchr(parseptr, ',')+1;
-    // read longitude E/W data
-    if (parseptr[0] != ',') {
-      longdir = parseptr[0];
-    }
-    
-
-    // groundspeed
-    parseptr = strchr(parseptr, ',')+1;
-    groundspeed = parsedecimal(parseptr);
-
-    // track angle
-    parseptr = strchr(parseptr, ',')+1;
-    trackangle = parsedecimal(parseptr);
-
-    // date
-    parseptr = strchr(parseptr, ',')+1;
-    tmp = parsedecimal(parseptr); 
-    date = tmp / 10000;
-    month = (tmp / 100) % 100;
-    year = tmp % 100;
-    
-    Serial.print("\nTime: ");
-    Serial.print(hour, DEC); Serial.print(':');
-    Serial.print(minute, DEC); Serial.print(':');
-    Serial.print(second, DEC); Serial.print(' ');
-    Serial.print("Date: ");
-    Serial.print(month, DEC); Serial.print('/');
-    Serial.print(date, DEC); Serial.print('/');
-    Serial.println(year, DEC);
-    
-    sLCD.write(byte(COMMAND));
-    sLCD.write(byte(0x80));
-    sLCD.print("La");
-   
-    Serial.print("Lat"); 
-    if (latdir == 'N')
-    {
-       Serial.print('+');
-       sLCD.print("+");
-    }
-    else if (latdir == 'S')
-    {  
-       Serial.print('-');
-       sLCD.print("-");
-    }
-     
-    Serial.print(latitude/1000000, DEC); Serial.print(byte('o')); Serial.print(' ');
-    Serial.print((latitude/10000)%100, DEC); Serial.print('\''); Serial.print(' ');
-    Serial.print((latitude%10000)*6/1000, DEC); Serial.print('.');
-    Serial.print(((latitude%10000)*6/10)%100, DEC); Serial.println('"');
-    
-    
-    
-    sLCD.print(latitude/1000000, DEC); sLCD.write(byte(0xDF)); sLCD.print(' ');
-    sLCD.print((latitude/10000)%100, DEC); sLCD.print('\''); //sLCD.print(' ');
-    sLCD.print((latitude%10000)*6/1000, DEC); sLCD.print('.');
-    sLCD.print(((latitude%10000)*6/10)%100, DEC); sLCD.print('"');
-    
-    sLCD.write(byte(COMMAND));
-    sLCD.write(byte(0xC0));
-    sLCD.print("Ln");
-   
-      
-    Serial.print("Long: ");
-    if (longdir == 'E')
-    {
-       Serial.print('+');
-       sLCD.print('+');
-    }
-    else if (longdir == 'W')
-    { 
-       Serial.print('-');
-       sLCD.print('-');
-    }
-    Serial.print(longitude/1000000, DEC); Serial.print(byte('o')); Serial.print(' ');
-    Serial.print((longitude/10000)%100, DEC); Serial.print('\''); Serial.print(' ');
-    Serial.print((longitude%10000)*6/1000, DEC); Serial.print('.');
-    Serial.print(((longitude%10000)*6/10)%100, DEC); Serial.println('"');
-    
-    sLCD.print(longitude/1000000, DEC); sLCD.print(byte(0xDF)); sLCD.print(' ');
-    sLCD.print((longitude/10000)%100, DEC); sLCD.print('\''); //sLCD.print(' ');
-    sLCD.print((longitude%10000)*6/1000, DEC); sLCD.print('.');
-    sLCD.print(((longitude%10000)*6/10)%100, DEC); sLCD.print('"');
-     
-  }
-  
- //   Serial.println("Lat: ");
- //   Serial.println(latitude);
-  
- //   Serial.println("Lon: ");
- //   Serial.println(longitude);
-  }
-
-
-
-}
-
-void readline(void) {
-  char c;
-  
-  buffidx = 0; // start at begninning
-  while (1) {
-      c=mySerial.read();
-      if (c == -1)
-        continue;
-  //    Serial.print(c);
-      if (c == '\n')
-        continue;
-      if ((buffidx == BUFFSIZ-1) || (c == '\r')) {
-        buffer[buffidx] = 0;
-        return;
-      }
-      buffer[buffidx++]= c;
-  }
-}
-uint32_t parsedecimal(char *str) {
-  uint32_t d = 0;
-  
-  while (str[0] != 0) {
-   if ((str[0] > '9') || (str[0] < '0'))
-     return d;
-   d *= 10;
-   d += str[0] - '0';
-   str++;
-  }
-  return d;
 }
 
 void clear_lcd(void)
