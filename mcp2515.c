@@ -52,26 +52,26 @@ uint8_t spi_putc( uint8_t data )
 }
 
 // -------------------------------------------------------------------------
-void mcp2515_write_register( uint8_t adress, uint8_t data )
+void mcp2515_write_register( uint8_t address, uint8_t data )
 {
 	RESET(MCP2515_CS);
 	
 	spi_putc(SPI_WRITE);
-	spi_putc(adress);
+	spi_putc(address);
 	spi_putc(data);
 	
 	SET(MCP2515_CS);
 }
 
 // -------------------------------------------------------------------------
-uint8_t mcp2515_read_register(uint8_t adress)
+uint8_t mcp2515_read_register(uint8_t address)
 {
 	uint8_t data;
 	
 	RESET(MCP2515_CS);
 	
 	spi_putc(SPI_READ);
-	spi_putc(adress);
+	spi_putc(address);
 	
 	data = spi_putc(0xff);	
 	
@@ -81,12 +81,12 @@ uint8_t mcp2515_read_register(uint8_t adress)
 }
 
 // -------------------------------------------------------------------------
-void mcp2515_bit_modify(uint8_t adress, uint8_t mask, uint8_t data)
+void mcp2515_bit_modify(uint8_t address, uint8_t mask, uint8_t data)
 {
 	RESET(MCP2515_CS);
 	
 	spi_putc(SPI_BIT_MODIFY);
-	spi_putc(adress);
+	spi_putc(address);
 	spi_putc(mask);
 	spi_putc(data);
 	
