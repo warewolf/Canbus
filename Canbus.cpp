@@ -123,7 +123,7 @@ char CanbusClass::ecu_req(unsigned char pid,  char *buffer)
 					if (mcp2515_get_message(&message)) 
 					{
 							// replies can come from 0x7E8 through 0x7EF
-							if((message.id & PID_REPLY == PID_REPLY) && (message.data[2] == pid))	// Check message is the reply and its the right PID
+							if((message.id <= 0x7EF && message.id >= 0x7E8 ) && (message.data[2] == pid))	// Check message is the reply and its the right PID
 							{
 								switch(message.data[2])
 								{   /* Details from http://en.wikipedia.org/wiki/OBD-II_PIDs */
