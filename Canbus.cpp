@@ -21,36 +21,24 @@
 /* C++ wrapper */
 CanbusClass::CanbusClass() {
 
- 
-}
-char CanbusClass::message_rx(unsigned char *buffer) {
-		tCAN message;
-	
-		if (mcp2515_check_message()) {
-		
-			
-			// Lese die Nachricht aus dem Puffern des MCP2515
-			if (mcp2515_get_message(&message)) {
-			//	print_can_message(&message);
-			//	PRINT("\n");
-				buffer[0] = message.data[0];
-				buffer[1] = message.data[1];
-				buffer[2] = message.data[2];
-				buffer[3] = message.data[3];
-				buffer[4] = message.data[4];
-				buffer[5] = message.data[5];
-				buffer[6] = message.data[6];
-				buffer[7] = message.data[7];								
-//				buffer[] = message[];
-//				buffer[] = message[];
-//				buffer[] = message[];
-//				buffer[] = message[];																												
-			}
-			else {
-			//	PRINT("Kann die Nachricht nicht auslesen\n\n");
-			}
-		}
 
+}
+
+char CanbusClass::message_rx(unsigned char *buffer) {
+	tCAN message;
+
+	if (mcp2515_check_message()) {
+
+		// Lese die Nachricht aus dem Puffern des MCP2515
+		if (mcp2515_get_message(&message)) {
+
+			int i;
+			for (i=0; i<8 ; i++) {
+				buffer[i] = message.data[i];
+			}
+
+		}
+	}
 }
 
 char CanbusClass::message_tx(void) {
@@ -58,7 +46,7 @@ char CanbusClass::message_tx(void) {
 
 
 	// einige Testwerte
-	message.id = 0x7DF;
+	message.id = PID_REQUEST;
 	message.header.rtr = 0;
 	message.header.length = 8;
 	message.data[0] = 0x02;
