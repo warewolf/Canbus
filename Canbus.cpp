@@ -1,4 +1,4 @@
-/**
+/** vim: ts=4
  * 
  *
  * Copyright (c) 2008-2009  All rights reserved.
@@ -77,6 +77,60 @@ return 1;
  
 }
 
+/* Calling convention:
+ * CanbussClass.decode_textual(&message,return_buffer);
+ * returns 1 if decoded, 0 if not decoded (unsupported)
+ */
+
+char CanbusClass::decode_textual(tCAN *message, char *buffer) {
+
+	float engine_data;
+    char message_supported = 1;
+
+	switch(message.data[2])
+	{
+	/* Details from http://en.wikipedia.org/wiki/OBD-II_PIDs */
+
+		case ENGINE_RPM:  			//   ((A*256)+B)/4    [RPM]
+		engine_data =  ((message.data[3]*256) + message.data[4])/4;
+		sprintf(buffer,"%d rpm ",(int) engine_data);
+		break;
+
+		case ENGINE_COOLANT_TEMP: 	// 	A-40			  [degree C]
+		engine_data =  message.data[3] - 40;
+		sprintf(buffer,"%d degC",(int) engine_data);
+		break;
+
+		case VEHICLE_SPEED: 		// A				  [km]
+		engine_data =  message.data[3];
+		sprintf(buffer,"%d km ",(int) engine_data);
+		break;
+
+		case MAF_SENSOR:   			// ((256*A)+B) / 100  [g/s]
+		engine_data =  ((message.data[3]*256) + message.data[4])/100;
+		sprintf(buffer,"%d g/s",(int) engine_data);
+		break;
+
+		case O2_VOLTAGE:    		// A * 0.005   (B-128) * 100/128 (if B==0xFF, sensor is not used in trim calc)
+		engine_data = message.data[3]*0.005;
+		sprintf(buffer,"%d v",(int) engine_data);
+        break;
+
+		case THROTTLE:				// Throttle Position
+		engine_data = (message.data[3]*100)/255;
+		sprintf(buffer,"%d %% ",(int) engine_data);
+		break;
+
+        default:
+        // unsupported PID
+        message_supported=0;
+		sprintf(buffer,"unsupported");
+        break;   
+
+	}
+	return message_supported;
+}
+
 char CanbusClass::ecu_req(unsigned char pid,  char *buffer) 
 {
 	tCAN tx_message;
@@ -115,42 +169,8 @@ char CanbusClass::ecu_req(unsigned char pid,  char *buffer)
 							// replies can come from 0x7E8 through 0x7EF
 							if((rx_message.id <= 0x7EF && rx_message.id >= 0x7E8 ) && (rx_message.data[2] == pid))	// Check message is the reply and its the right PID
 							{
-								switch(rx_message.data[2])
-								{   /* Details from http://en.wikipedia.org/wiki/OBD-II_PIDs */
-									case ENGINE_RPM:  			//   ((A*256)+B)/4    [RPM]
-									engine_data =  ((rx_message.data[3]*256) + rx_message.data[4])/4;
-									sprintf(buffer,"%d rpm ",(int) engine_data);
-									break;
-							
-									case ENGINE_COOLANT_TEMP: 	// 	A-40			  [degree C]
-									engine_data =  rx_message.data[3] - 40;
-									sprintf(buffer,"%d degC",(int) engine_data);
-							
-									break;
-							
-									case VEHICLE_SPEED: 		// A				  [km]
-									engine_data =  rx_message.data[3];
-									sprintf(buffer,"%d km ",(int) engine_data);
-							
-									break;
-
-									case MAF_SENSOR:   			// ((256*A)+B) / 100  [g/s]
-									engine_data =  ((rx_message.data[3]*256) + rx_message.data[4])/100;
-									sprintf(buffer,"%d g/s",(int) engine_data);
-							
-									break;
-
-									case O2_VOLTAGE:    		// A * 0.005   (B-128) * 100/128 (if B==0xFF, sensor is not used in trim calc)
-									engine_data = rx_message.data[3]*0.005;
-									sprintf(buffer,"%d v",(int) engine_data);
-							
-									case THROTTLE:				// Throttle Position
-									engine_data = (rx_message.data[3]*100)/255;
-									sprintf(buffer,"%d %% ",(int) engine_data);
-									break;
-							
-								}
-								message_ok = 1;
+								
+ 								message_ok = CanbussClass.decode_textual(&message,buffer);
 							}
 
 					}
