@@ -146,26 +146,22 @@ void setup() {
 
 }
  
-
 void loop() {
  
+  digitalWrite(LED3, HIGH);
+
   if(Canbus.ecu_req(ENGINE_RPM,buffer) == 1)          /* Request for engine RPM */
   {
     sLCD.write(byte(COMMAND));                   /* Move LCD cursor to line 0 */
     sLCD.write(byte(LINE0));
     sLCD.print(buffer);                         /* Display data on LCD */
-   
-    
   } 
-
-  digitalWrite(LED3, HIGH);
    
   if(Canbus.ecu_req(VEHICLE_SPEED,buffer) == 1)
   {
     sLCD.write(byte(COMMAND));
     sLCD.write(byte(LINE0 + 9));
     sLCD.print(buffer);
-   
   }
   
   if(Canbus.ecu_req(ENGINE_COOLANT_TEMP,buffer) == 1)
@@ -173,8 +169,6 @@ void loop() {
     sLCD.write(byte(COMMAND));
     sLCD.write(byte(LINE1));                     /* Move LCD cursor to line 1 */
     sLCD.write(buffer);
-   
-   
   }
   
   if(Canbus.ecu_req(THROTTLE,buffer) == 1)
@@ -187,14 +181,9 @@ void loop() {
    
    digitalWrite(LED3, LOW); 
    delay(100); 
-   
-   
-
 }
 
-
-void logging(void)
-{
+void logging(void) {
   clear_lcd();
   
   if(Canbus.init(CANSPEED_500))  /* Initialise MCP2515 CAN controller at the specified speed */
@@ -301,10 +290,8 @@ void logging(void)
  
  
 }
-     
 
-void sd_test(void)
-{
+void sd_test(void) {
  clear_lcd(); 
  sLCD.print("SD test"); 
  Serial.println("SD card test");
@@ -347,8 +334,7 @@ void sd_test(void)
 
 }
 
-void clear_lcd(void)
-{
+void clear_lcd(void) {
   sLCD.write(byte(COMMAND));
   sLCD.write(byte(CLEAR));
 }  
