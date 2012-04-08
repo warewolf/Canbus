@@ -1,0 +1,64 @@
+// vim: filetype=c 
+
+// global variables
+struct tCAN rx_buffer; // CAN message reception buffer 
+struct tCAN can_message; // CAN message storage (until user code retrieves)
+
+char monitor_pid; // PID we're monitoring for
+char message_ack = false; // false = can message was not read, true = message was read
+char message_overflow = false; // false = message was read before overwrite, true = message was overwritten before read
+
+// MCP2515 signals message received (interrupt handler, digital pin 2, on HIGH)
+void message_received {
+
+  // ask '2515 via SPI for CAN message, and store in rx_buffer
+  if (mcp2515_get_message(&rx_buffer)) {
+    // message retrieved from '2515 successfully
+  } else {
+    // message retrieval failure
+  }
+
+  if (rx_buffer.data[2] == monitor_pid) {
+
+    // save state if we're about to overwrite an unacknowledged (read) message
+    if (message_ack == false) {
+        message_overflow = true;
+    } else {
+        message_overflow = false;
+    }
+
+    // clear message ACK flag
+    message_ack = 0;
+
+    // message we just received matches what we're interested in
+    // copy data from rx_buffer to can_message
+    // I know this is wrong.
+    can_message = &rx_buffer;
+  } else {
+    // not a PID we're interested in, fall through
+  }
+
+}
+
+// SET accessor method for monitored PID
+int set_pid_monitor (char *pid) {
+  monitor_pid = &pid;
+  return &pid;
+}
+
+// GET accessor method for monitored PID
+int get_pid_monitor() {
+  return *monitor_pid;
+}
+
+// GET buffered message that we were monitoring for
+int buffered_can (tCAN *message) {
+
+  // I know this is wrong.
+  // copy can_message buffer passed to us
+  message = &can_message
+
+  // set message ACK'd flag
+  message_ack = 1;
+  return 1;
+}
