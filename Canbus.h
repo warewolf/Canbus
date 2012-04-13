@@ -21,6 +21,7 @@
 
 #define PID_REQUEST         0x7DF
 #define PID_REPLY           0x7E8
+#include "mcp2515.h"
 
 class CanbusClass
 {
@@ -31,6 +32,8 @@ class CanbusClass
 	char message_tx(void);
 	char message_rx(unsigned char *buffer);
 	char ecu_req(unsigned char pid,  char *buffer);
+        char decode_textual(tCAN *message, char *buffer);
+
 private:
 	
 };

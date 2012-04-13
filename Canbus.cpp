@@ -39,6 +39,7 @@ char CanbusClass::message_rx(unsigned char *buffer) {
 
 		}
 	}
+    return 1;
 }
 
 char CanbusClass::message_tx(void) {
@@ -65,7 +66,6 @@ char CanbusClass::message_tx(void) {
 		mcp2515_bit_modify(CANCTRL, (1<<REQOP2)|(1<<REQOP1)|(1<<REQOP0), 0);
 		
 	if (mcp2515_send_message(&message)) {
-		//	SET(LED2_HIGH);
 		return 1;
 	
 	}
@@ -78,7 +78,7 @@ return 1;
 }
 
 /* Calling convention:
- * CanbussClass.decode_textual(&message,return_buffer);
+ * CanbusClass.decode_textual(&message,return_buffer);
  * returns 1 if decoded, 0 if not decoded (unsupported)
  */
 
@@ -87,37 +87,37 @@ char CanbusClass::decode_textual(tCAN *message, char *buffer) {
 	float engine_data;
     char message_supported = 1;
 
-	switch(message.data[2])
+	switch(message->data[2])
 	{
 	/* Details from http://en.wikipedia.org/wiki/OBD-II_PIDs */
 
 		case ENGINE_RPM:  			//   ((A*256)+B)/4    [RPM]
-		engine_data =  ((message.data[3]*256) + message.data[4])/4;
+		engine_data =  ((message->data[3]*256) + message->data[4])/4;
 		sprintf(buffer,"%d rpm ",(int) engine_data);
 		break;
 
 		case ENGINE_COOLANT_TEMP: 	// 	A-40			  [degree C]
-		engine_data =  message.data[3] - 40;
+		engine_data =  message->data[3] - 40;
 		sprintf(buffer,"%d degC",(int) engine_data);
 		break;
 
 		case VEHICLE_SPEED: 		// A				  [km]
-		engine_data =  message.data[3];
+		engine_data =  message->data[3];
 		sprintf(buffer,"%d km ",(int) engine_data);
 		break;
 
 		case MAF_SENSOR:   			// ((256*A)+B) / 100  [g/s]
-		engine_data =  ((message.data[3]*256) + message.data[4])/100;
+		engine_data =  ((message->data[3]*256) + message->data[4])/100;
 		sprintf(buffer,"%d g/s",(int) engine_data);
 		break;
 
 		case O2_VOLTAGE:    		// A * 0.005   (B-128) * 100/128 (if B==0xFF, sensor is not used in trim calc)
-		engine_data = message.data[3]*0.005;
+		engine_data = message->data[3]*0.005;
 		sprintf(buffer,"%d v",(int) engine_data);
         break;
 
 		case THROTTLE:				// Throttle Position
-		engine_data = (message.data[3]*100)/255;
+		engine_data = (message->data[3]*100)/255;
 		sprintf(buffer,"%d %% ",(int) engine_data);
 		break;
 
@@ -131,12 +131,10 @@ char CanbusClass::decode_textual(tCAN *message, char *buffer) {
 	return message_supported;
 }
 
-char CanbusClass::ecu_req(unsigned char pid,  char *buffer) 
-{
+char CanbusClass::ecu_req(unsigned char pid,  char *buffer) {
 	tCAN tx_message;
 	tCAN rx_message;
 
-	float engine_data;
 	int timeout = 0;
 	char message_ok = 0;
 	// Prepair message
@@ -170,7 +168,7 @@ char CanbusClass::ecu_req(unsigned char pid,  char *buffer)
 							if((rx_message.id <= 0x7EF && rx_message.id >= 0x7E8 ) && (rx_message.data[2] == pid))	// Check message is the reply and its the right PID
 							{
 								
- 								message_ok = CanbussClass.decode_textual(&message,buffer);
+ 								message_ok = decode_textual(&rx_message,buffer);
 							}
 
 					}
@@ -181,11 +179,6 @@ char CanbusClass::ecu_req(unsigned char pid,  char *buffer)
 
  	return 0;
 }
-
-
-
-
-
 
 char CanbusClass::init(unsigned char speed) {
 
